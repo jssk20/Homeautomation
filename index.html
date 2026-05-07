@@ -1,0 +1,1023 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HavenIQ Home Automation</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
+
+  <style>
+    :root {
+      --bg: #eef2f0;
+      --surface: #ffffff;
+      --surface-soft: #f7f9f7;
+      --text: #18211f;
+      --muted: #64706c;
+      --line: #dce4e0;
+      --accent: #166b5d;
+      --accent-strong: #0d4d43;
+      --blue: #2f6fed;
+      --amber: #c88311;
+      --red: #b64242;
+      --shadow: 0 18px 55px rgba(33, 48, 44, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      padding: 24px;
+      background: #101816;
+      color: #f5faf8;
+    }
+
+    .brand, .nav-item {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      border-radius: 8px;
+      background: #e5f5ef;
+      color: var(--accent);
+    }
+
+    .brand strong, .brand small { display: block; }
+
+    .brand small,
+    .connection-card small,
+    .eyebrow,
+    .device-card p,
+    .energy-breakdown small {
+      color: var(--muted);
+    }
+
+    .sidebar .brand small,
+    .sidebar .connection-card small {
+      color: #aab8b4;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 44px;
+      padding: 0 12px;
+      border-radius: 8px;
+      color: #cbd7d3;
+    }
+
+    .nav-item.active,
+    .nav-item:hover {
+      background: #20302c;
+      color: #ffffff;
+    }
+
+    .connection-card {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--amber);
+      box-shadow: 0 0 0 5px rgba(200, 131, 17, 0.18);
+    }
+
+    .status-dot.online {
+      background: #3bb273;
+      box-shadow: 0 0 0 5px rgba(59, 178, 115, 0.18);
+    }
+
+    .status-dot.offline {
+      background: var(--red);
+      box-shadow: 0 0 0 5px rgba(182, 66, 66, 0.18);
+    }
+
+    .content { padding: 28px; }
+
+    .topbar,
+    .section-heading,
+    .topbar-actions,
+    .quick-grid,
+    .energy-breakdown,
+    .stepper,
+    .safe-badge {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar {
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .topbar h1,
+    .section-heading h2,
+    .hero-copy h2,
+    .device-card h3 {
+      margin: 0;
+    }
+
+    .topbar h1 {
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .topbar-actions { gap: 10px; }
+
+    .icon-button,
+    .primary-action,
+    .ghost-action,
+    .scene-button,
+    .room-tab,
+    .stepper button {
+      border: 0;
+      border-radius: 8px;
+    }
+
+    .icon-button {
+      display: grid;
+      width: 44px;
+      height: 44px;
+      place-items: center;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 8px 24px rgba(33, 48, 44, 0.08);
+    }
+
+    .mobile-menu { display: none; }
+
+    .primary-action,
+    .ghost-action {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      white-space: nowrap;
+    }
+
+    .primary-action {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .ghost-action {
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--accent-strong);
+    }
+
+    .hero-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
+      gap: 22px;
+      min-height: 310px;
+      padding: 30px;
+      overflow: hidden;
+      border-radius: 8px;
+      color: #ffffff;
+      background:
+        linear-gradient(90deg, rgba(10, 18, 16, 0.86), rgba(10, 18, 16, 0.42)),
+        url("https://images.unsplash.com/photo-1558002038-1055907df827?auto=format&fit=crop&w=1600&q=80") center / cover;
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      align-self: end;
+      max-width: 700px;
+    }
+
+    .hero-copy h2 {
+      margin-top: 18px;
+      font-size: clamp(1.9rem, 4vw, 3.4rem);
+      line-height: 1.05;
+    }
+
+    .hero-copy p {
+      max-width: 560px;
+      color: #dbe5e1;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .live-pill,
+    .safe-badge {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      width: fit-content;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      color: #ffffff;
+    }
+
+    .hero-metrics {
+      display: grid;
+      align-content: end;
+      gap: 12px;
+    }
+
+    .hero-metrics div {
+      padding: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(10, 18, 16, 0.54);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero-metrics small,
+    .hero-metrics strong {
+      display: block;
+    }
+
+    .hero-metrics strong {
+      margin-top: 6px;
+      font-size: 1.55rem;
+    }
+
+    .quick-grid {
+      gap: 12px;
+      margin: 18px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .scene-button {
+      display: flex;
+      flex: 1 0 150px;
+      min-height: 64px;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 10px 28px rgba(33, 48, 44, 0.07);
+    }
+
+    .scene-button.active,
+    .scene-button:hover {
+      background: #dff2ea;
+      color: var(--accent-strong);
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 12px 36px rgba(33, 48, 44, 0.08);
+    }
+
+    .section-heading {
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .segmented {
+      display: flex;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .room-tab {
+      min-height: 36px;
+      padding: 0 12px;
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .room-tab.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 4px 12px rgba(33, 48, 44, 0.08);
+    }
+
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .device-card {
+      display: grid;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 112px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .device-card p { margin: 6px 0 0; }
+
+    .device-icon {
+      display: grid;
+      width: 48px;
+      height: 48px;
+      place-items: center;
+      border-radius: 8px;
+    }
+
+    .device-icon.warm {
+      background: #fff2d8;
+      color: var(--amber);
+    }
+
+    .device-icon.cool {
+      background: #e6efff;
+      color: var(--blue);
+    }
+
+    .device-icon.secure {
+      background: #e4f4ec;
+      color: var(--accent);
+    }
+
+    .device-icon.alert {
+      background: #fdeaea;
+      color: var(--red);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-flex;
+      width: 48px;
+      height: 28px;
+    }
+
+    .switch input {
+      position: absolute;
+      opacity: 0;
+    }
+
+    .switch span {
+      width: 100%;
+      border-radius: 999px;
+      background: #cfd8d4;
+      transition: 0.2s ease;
+    }
+
+    .switch span::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #ffffff;
+      transition: 0.2s ease;
+    }
+
+    .switch input:checked + span { background: var(--accent); }
+
+    .switch input:checked + span::after {
+      transform: translateX(20px);
+    }
+
+    .stepper { gap: 6px; }
+
+    .stepper button {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      background: #e8efec;
+      color: var(--text);
+    }
+
+    .energy-chart {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      align-items: end;
+      gap: 10px;
+      height: 170px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f2f6f4;
+    }
+
+    .energy-chart span {
+      min-height: 18px;
+      height: var(--height);
+      border-radius: 8px 8px 3px 3px;
+      background: linear-gradient(180deg, #2f6fed, #76a782);
+    }
+
+    .energy-breakdown {
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .energy-breakdown div {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .energy-breakdown strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.2rem;
+    }
+
+    .safe-badge {
+      background: #e4f4ec;
+      color: var(--accent-strong);
+      font-size: 0.9rem;
+    }
+
+    .security-list,
+    .activity-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .security-list div,
+    .activity-item {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--surface-soft);
+    }
+
+    .activity-item {
+      grid-template-columns: 34px minmax(0, 1fr);
+    }
+
+    .activity-item span { display: block; }
+    .activity-item small { color: var(--muted); }
+
+    svg {
+      width: 19px;
+      height: 19px;
+      stroke-width: 2;
+    }
+
+    @media (max-width: 1080px) {
+      .app-shell { grid-template-columns: 1fr; }
+
+      .sidebar {
+        position: fixed;
+        z-index: 20;
+        width: min(320px, 86vw);
+        transform: translateX(-100%);
+        transition: transform 0.22s ease;
+      }
+
+      .sidebar.open { transform: translateX(0); }
+      .mobile-menu { display: grid; }
+
+      .dashboard-grid,
+      .hero-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .content { padding: 16px; }
+
+      .topbar { align-items: flex-start; }
+      .topbar-actions { margin-left: auto; }
+
+      .primary-action {
+        width: 44px;
+        padding: 0;
+      }
+
+      .primary-action .button-label { font-size: 0; }
+
+      .hero-panel {
+        min-height: 560px;
+        padding: 22px;
+      }
+
+      .hero-copy { align-self: start; }
+
+      .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .segmented,
+      .room-tab {
+        width: 100%;
+      }
+
+      .device-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .device-card {
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#">
+        <span class="brand-mark"><i data-lucide="house"></i></span>
+        <span>
+          <strong>HavenIQ</strong>
+          <small>Smart Home</small>
+        </span>
+      </a>
+
+      <nav class="nav-list">
+        <a class="nav-item active" href="#overview"><i data-lucide="layout-dashboard"></i>Overview</a>
+        <a class="nav-item" href="#rooms"><i data-lucide="door-open"></i>Rooms</a>
+        <a class="nav-item" href="#security"><i data-lucide="shield-check"></i>Security</a>
+        <a class="nav-item" href="#energy"><i data-lucide="activity"></i>Energy</a>
+      </nav>
+
+      <div class="connection-card">
+        <span class="status-dot" id="statusDot"></span>
+        <div>
+          <strong id="connectionLabel">Connecting</strong>
+          <small id="connectionDetail">Firebase sync starting</small>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="mobileMenu" aria-label="Open navigation">
+          <i data-lucide="menu"></i>
+        </button>
+
+        <div>
+          <p class="eyebrow">Live Home Command</p>
+          <h1>Good evening</h1>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="icon-button" id="refreshSync" aria-label="Refresh Firebase sync">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+
+          <button class="primary-action" id="awayMode">
+            <i data-lucide="moon"></i>
+            <span class="button-label">Away mode</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="hero-panel" id="overview">
+        <div class="hero-copy">
+          <span class="live-pill"><i data-lucide="radio"></i>Realtime controls</span>
+          <h2>Control lighting, climate, locks, and scenes from one calm dashboard.</h2>
+          <p>Every toggle writes to Firebase Firestore when available, while the interface stays usable locally during setup.</p>
+        </div>
+
+        <div class="hero-metrics">
+          <div>
+            <small>Temperature</small>
+            <strong><span id="temperatureValue">24</span>C</strong>
+          </div>
+          <div>
+            <small>Energy today</small>
+            <strong><span id="energyValue">8.4</span> kWh</strong>
+          </div>
+          <div>
+            <small>Secure zones</small>
+            <strong><span id="secureValue">6</span>/6</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-grid">
+        <button class="scene-button active" data-scene="morning"><i data-lucide="sunrise"></i><span>Morning</span></button>
+        <button class="scene-button" data-scene="focus"><i data-lucide="lamp-desk"></i><span>Focus</span></button>
+        <button class="scene-button" data-scene="movie"><i data-lucide="clapperboard"></i><span>Movie</span></button>
+        <button class="scene-button" data-scene="sleep"><i data-lucide="bed"></i><span>Sleep</span></button>
+      </section>
+
+      <section class="dashboard-grid">
+        <section class="panel" id="rooms">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Rooms</p>
+              <h2>Device Control</h2>
+            </div>
+
+            <div class="segmented">
+              <button class="room-tab active" data-room="living">Living</button>
+              <button class="room-tab" data-room="bedroom">Bedroom</button>
+              <button class="room-tab" data-room="kitchen">Kitchen</button>
+            </div>
+          </div>
+
+          <div class="device-grid">
+            <article class="device-card">
+              <div class="device-icon warm"><i data-lucide="lightbulb"></i></div>
+              <div>
+                <h3>Main Lights</h3>
+                <p id="lightsText">Warm, 72%</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-toggle="lights" checked />
+                <span></span>
+              </label>
+            </article>
+
+            <article class="device-card">
+              <div class="device-icon cool"><i data-lucide="snowflake"></i></div>
+              <div>
+                <h3>Climate</h3>
+                <p><span id="climateText">24</span>C cooling</p>
+              </div>
+              <div class="stepper">
+                <button data-temp="-1" aria-label="Lower temperature"><i data-lucide="minus"></i></button>
+                <button data-temp="1" aria-label="Raise temperature"><i data-lucide="plus"></i></button>
+              </div>
+            </article>
+
+            <article class="device-card">
+              <div class="device-icon secure"><i data-lucide="lock-keyhole"></i></div>
+              <div>
+                <h3>Front Door</h3>
+                <p id="lockText">Locked</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-toggle="lock" checked />
+                <span></span>
+              </label>
+            </article>
+
+            <article class="device-card">
+              <div class="device-icon alert"><i data-lucide="cctv"></i></div>
+              <div>
+                <h3>Entry Camera</h3>
+                <p id="cameraText">Recording</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" data-toggle="camera" checked />
+                <span></span>
+              </label>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="energy">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Energy</p>
+              <h2>Usage Today</h2>
+            </div>
+            <button class="ghost-action" id="optimizeEnergy"><i data-lucide="leaf"></i>Optimize</button>
+          </div>
+
+          <div class="energy-chart">
+            <span style="--height:42%"></span>
+            <span style="--height:58%"></span>
+            <span style="--height:36%"></span>
+            <span style="--height:72%"></span>
+            <span style="--height:64%"></span>
+            <span style="--height:86%"></span>
+            <span style="--height:52%"></span>
+          </div>
+
+          <div class="energy-breakdown">
+            <div><small>Saved this week</small><strong>18%</strong></div>
+            <div><small>Peak device</small><strong>AC</strong></div>
+          </div>
+        </section>
+
+        <section class="panel" id="security">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Security</p>
+              <h2>Home Status</h2>
+            </div>
+            <span class="safe-badge"><i data-lucide="shield"></i>Protected</span>
+          </div>
+
+          <div class="security-list">
+            <div><i data-lucide="door-closed"></i><span>All doors locked</span><strong id="doorState">Yes</strong></div>
+            <div><i data-lucide="video"></i><span>Cameras active</span><strong id="cameraState">3</strong></div>
+            <div><i data-lucide="siren"></i><span>Alarm mode</span><strong id="alarmState">Home</strong></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Activity</p>
+              <h2>Recent Events</h2>
+            </div>
+          </div>
+
+          <div class="activity-list" id="activityList"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+    import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-analytics.js";
+    import {
+      addDoc,
+      collection,
+      doc,
+      getFirestore,
+      onSnapshot,
+      serverTimestamp,
+      setDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCMqdIku2dqWkndBiF5eIccG7Xn5UXIB70",
+      authDomain: "homeautomation-6888b.firebaseapp.com",
+      projectId: "homeautomation-6888b",
+      storageBucket: "homeautomation-6888b.firebasestorage.app",
+      messagingSenderId: "147112866248",
+      appId: "1:147112866248:web:0861b21ffffa5a04f610fd",
+      measurementId: "G-TL391Z56CM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const homeRef = doc(db, "homes", "demo-home");
+    const activityRef = collection(db, "homes", "demo-home", "activity");
+
+    isSupported().then((supported) => {
+      if (supported) getAnalytics(app);
+    });
+
+    const defaultState = {
+      room: "living",
+      scene: "morning",
+      temperature: 24,
+      energy: 8.4,
+      secureZones: 6,
+      alarm: "Home",
+      devices: {
+        lights: true,
+        lock: true,
+        camera: true
+      },
+      activity: [
+        { label: "Morning scene activated", detail: "Local preview" },
+        { label: "Front door locked", detail: "Local preview" },
+        { label: "Climate set to 24C", detail: "Local preview" }
+      ]
+    };
+
+    let state = structuredClone(defaultState);
+    let remoteReady = false;
+
+    const statusDot = document.querySelector("#statusDot");
+    const connectionLabel = document.querySelector("#connectionLabel");
+    const connectionDetail = document.querySelector("#connectionDetail");
+    const activityList = document.querySelector("#activityList");
+
+    function setConnection(mode, label, detail) {
+      statusDot.className = `status-dot ${mode}`;
+      connectionLabel.textContent = label;
+      connectionDetail.textContent = detail;
+    }
+
+    function logLocalActivity(label, detail = "Just now") {
+      state.activity = [{ label, detail }, ...state.activity].slice(0, 5);
+      render();
+    }
+
+    async function writeState(label) {
+      render();
+
+      try {
+        await setDoc(homeRef, { ...state, updatedAt: serverTimestamp() }, { merge: true });
+        await addDoc(activityRef, { label, createdAt: serverTimestamp() });
+        setConnection("online", "Live sync", "Firestore connected");
+      } catch (error) {
+        remoteReady = false;
+        setConnection("offline", "Local mode", "Check Firestore rules");
+        console.warn("Firebase write failed:", error);
+      }
+    }
+
+    function render() {
+      document.querySelector("#temperatureValue").textContent = state.temperature;
+      document.querySelector("#climateText").textContent = state.temperature;
+      document.querySelector("#energyValue").textContent = state.energy.toFixed(1);
+      document.querySelector("#secureValue").textContent = state.secureZones;
+
+      document.querySelector("#lightsText").textContent = state.devices.lights ? "Warm, 72%" : "Off";
+      document.querySelector("#lockText").textContent = state.devices.lock ? "Locked" : "Unlocked";
+      document.querySelector("#cameraText").textContent = state.devices.camera ? "Recording" : "Paused";
+
+      document.querySelector("#doorState").textContent = state.devices.lock ? "Yes" : "No";
+      document.querySelector("#cameraState").textContent = state.devices.camera ? "3" : "0";
+      document.querySelector("#alarmState").textContent = state.alarm;
+
+      document.querySelectorAll("[data-toggle]").forEach((toggle) => {
+        toggle.checked = Boolean(state.devices[toggle.dataset.toggle]);
+      });
+
+      document.querySelectorAll("[data-scene]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.scene === state.scene);
+      });
+
+      document.querySelectorAll("[data-room]").forEach((button) => {
+        button.classList.toggle("active", button.dataset.room === state.room);
+      });
+
+      activityList.innerHTML = "";
+
+      state.activity.slice(0, 5).forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "activity-item";
+        row.innerHTML = `
+          <i data-lucide="history"></i>
+          <div>
+            <span>${item.label}</span>
+            <small>${item.detail || "Synced event"}</small>
+          </div>
+        `;
+        activityList.append(row);
+      });
+
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    document.querySelector("#mobileMenu").addEventListener("click", () => {
+      document.querySelector(".sidebar").classList.toggle("open");
+    });
+
+    document.querySelector("#awayMode").addEventListener("click", () => {
+      state.scene = "sleep";
+      state.alarm = "Away";
+      state.devices.lights = false;
+      state.devices.lock = true;
+      logLocalActivity("Away mode enabled");
+      writeState("Away mode enabled");
+    });
+
+    document.querySelector("#refreshSync").addEventListener("click", () => {
+      setConnection(remoteReady ? "online" : "", remoteReady ? "Live sync" : "Connecting", "Refreshing state");
+      writeState("Manual sync requested");
+    });
+
+    document.querySelector("#optimizeEnergy").addEventListener("click", () => {
+      state.energy = Math.max(4.5, Number((state.energy - 0.7).toFixed(1)));
+      state.temperature = Math.min(26, state.temperature + 1);
+      logLocalActivity("Energy optimization applied");
+      writeState("Energy optimization applied");
+    });
+
+    document.querySelectorAll("[data-toggle]").forEach((toggle) => {
+      toggle.addEventListener("change", (event) => {
+        const device = event.target.dataset.toggle;
+        state.devices[device] = event.target.checked;
+
+        const label = `${device[0].toUpperCase()}${device.slice(1)} ${event.target.checked ? "enabled" : "disabled"}`;
+        logLocalActivity(label);
+        writeState(label);
+      });
+    });
+
+    document.querySelectorAll("[data-temp]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.temperature = Math.min(30, Math.max(18, state.temperature + Number(button.dataset.temp)));
+        logLocalActivity(`Climate set to ${state.temperature}C`);
+        writeState(`Climate set to ${state.temperature}C`);
+      });
+    });
+
+    document.querySelectorAll("[data-scene]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.scene = button.dataset.scene;
+
+        if (state.scene === "morning") state.devices.lights = false;
+        if (state.scene === "focus") state.devices.lights = true;
+        if (state.scene === "movie") state.devices.lights = true;
+        if (state.scene === "sleep") state.devices.lights = false;
+
+        logLocalActivity(`${button.textContent.trim()} scene activated`);
+        writeState(`${button.textContent.trim()} scene activated`);
+      });
+    });
+
+    document.querySelectorAll("[data-room]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.room = button.dataset.room;
+        logLocalActivity(`${button.textContent.trim()} room selected`);
+        writeState(`${button.textContent.trim()} room selected`);
+      });
+    });
+
+    onSnapshot(
+      homeRef,
+      (snapshot) => {
+        remoteReady = true;
+        setConnection("online", "Live sync", "Firestore connected");
+
+        if (snapshot.exists()) {
+          state = {
+            ...defaultState,
+            ...snapshot.data(),
+            devices: {
+              ...defaultState.devices,
+              ...snapshot.data().devices
+            },
+            activity: state.activity
+          };
+        } else {
+          writeState("Home dashboard initialized");
+        }
+
+        render();
+      },
+      (error) => {
+        remoteReady = false;
+        setConnection("offline", "Local mode", "Check Firestore rules");
+        console.warn("Firebase listener failed:", error);
+        render();
+      }
+    );
+
+    window.addEventListener("load", () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    render();
+  </script>
+</body>
+</html>
